@@ -9,7 +9,7 @@ class Zef::Fetch does Pluggable {
 
     method fetch-matcher($uri) { self.plugins.grep(*.fetch-matcher($uri)) }
 
-    method fetch($candi, $save-to, Supplier :$logger, Int :$timeout) {
+    method fetch($candi, $save-to, Supplier :$logger, Int :$timeout, AUTH :$auth = NONE) {
         my $uri      := $candi.uri;
         my $fetchers := self.fetch-matcher($uri).cache;
 
@@ -29,7 +29,7 @@ class Zef::Fetch does Pluggable {
             }
 
             my $ret = lock-file-protect("{$save-to}.lock", -> {
-                my $todo    = start { try $fetcher.fetch($uri, $save-to) };
+                my $todo    = start { try $fetcher.fetch($uri, $save-to, :auth($auth)) };
                 my $time-up = ($timeout ?? Promise.in($timeout) !! Promise.new);
                 await Promise.anyof: $todo, $time-up;
                 $logger.emit({ level => DEBUG, stage => FETCH, phase => LIVE, candi => $candi, message => "Fetching $uri timed out" })

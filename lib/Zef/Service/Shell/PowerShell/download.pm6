@@ -5,9 +5,12 @@ class Zef::Service::Shell::PowerShell::download is Zef::Service::Shell::PowerShe
     method fetch-matcher($url) { $ = $url.lc.starts-with('http://' | 'https://') }
     method probe { nextsame }
 
-    method fetch($url, IO() $save-as) {
+    method fetch($url, IO() $save-as, AUTH :$auth = NONE) {
         die "target download directory {$save-as.parent} does not exist and could not be created"
             unless $save-as.parent.d || mkdir($save-as.parent);
+
+        # XXX this needs support for the bearer-token like wget and curl, but I
+        # have no windows to try/test this...
 
         my $passed;
         react {

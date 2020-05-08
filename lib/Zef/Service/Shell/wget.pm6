@@ -7,15 +7,20 @@ class Zef::Service::Shell::wget does Fetcher does Probeable does Messenger {
         state $probe = try { zrun('wget', '--help', :!out, :!err).so };
     }
 
-    method fetch($url, IO() $save-as) {
+    method fetch($url, IO() $save-as, :$auth = NONE) {
         die "target download directory {$save-as.parent} does not exist and could not be created"
             unless $save-as.parent.d || mkdir($save-as.parent);
+
+        my @auth-args = ();
+        if $auth === BEARER-TOKEN {
+            @auth-args = ("--header=Authorization: Bearer {%*ENV{'ZEF_AUTH_TOKEN'}//''}");
+        }
 
         my $passed;
         react {
             my $cwd := $save-as.parent;
             my $ENV := %*ENV;
-            my $proc = zrun-async('wget', '-P', $cwd, '--quiet', $url, '-O', $save-as.absolute);
+            my $proc = zrun-async('wget', '-P', $cwd, '--quiet', $url, '-O', $save-as.absolute, |@auth-args);
             whenever $proc.stdout(:bin) { }
             whenever $proc.stderr(:bin) { }
             whenever $proc.start(:$ENV, :$cwd) { $passed = $_.so }

@@ -7,6 +7,7 @@ class Zef::Repository::Ecosystems does Repository {
     has $.name;
     has $.mirrors;
     has $.auto-update is rw;
+    has $.auth;
 
     has $.fetcher;
     has $.cache;
@@ -41,7 +42,8 @@ class Zef::Repository::Ecosystems does Repository {
             my $save-as  = $!cache.IO.child($uri.IO.basename);
             my $saved-as = try {
                 CATCH { default { .note; } }
-                $!fetcher.fetch(Candidate.new(:$uri), $save-as, :timeout(180));
+                $!fetcher.fetch(Candidate.new(:$uri), $save-as, :timeout(180),
+                    :auth(AUTH($!auth // "") // NONE));
             }
             next unless $saved-as.?chars && $saved-as.IO.e;
 
